@@ -1,0 +1,69 @@
+seed: 6
+
+# config for wandb
+wandb_cfg:
+  use_wandb: True
+  project: "my_awesome_project"
+  notes: "training details on the process of global rank 0"
+  tags: ["baseline", "paper1"]
+
+# config for NLP preprocess
+preprocess_nlp_cfg:
+  lowercase: True
+  rm_punctuation: True
+  rm_stopword: False
+  lemmatization: True
+  min_freq: 3
+  max_tokens: 10000
+
+# config for loader
+loader_cfg:
+  batch_size: 32
+  num_workers: 8
+  pin_memory: True
+
+# config for model
+model_cfg:
+  vocab_size: 10000
+  embed_dim: 128
+  nhead: 2
+  dim_feedforward: 512
+  num_layers: 2
+  num_classes: 2
+  dropout: 0.1
+
+# config for optimizer
+optimizer_cfg:
+  lr: 0.001
+  weight_decay: 0.01
+
+# config for scheduler
+scheduler_cfg:
+  T_0: 5
+  T_mult: 2
+
+# config for train
+train_cfg:
+  max_epoch: 50
+  do_valid: True
+  do_test: True
+  save_log: True
+  save_best: True
+  save_checkpoint: True
+  resume_checkpoint: False
+  # required if `do_valid` is True
+  valid_start: 10
+  valid_step: 1
+  # required if `do_test` is True
+  test_start: 20
+  test_step: 2
+  # required if `save_*` is True
+  save_dir: "./checkpoints"
+  # required if `save_best` is True
+  measure_best: "loss"
+  measure_mode: "min"
+  # required if `save_checkpoint` is True
+  checkpoint_latest: True
+  checkpoint_list: [30, 40, 50]
+  # required if `resume_checkpoint` is True
+  resume_path: null

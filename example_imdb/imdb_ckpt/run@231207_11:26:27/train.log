@@ -1,0 +1,103 @@
+2023-12-07 11:26:27 - INFO - ---------- config ----------
+seed: 6
+wandb_cfg: {
+use_wandb: True
+project: IMDb
+notes: training details on the process of global rank 0
+tags: ['IMDb dataset', 'TransformerEncoder']
+}
+preprocess_nlp_cfg: {
+lowercase: True
+rm_punctuation: True
+rm_stopword: False
+lemmatization: True
+min_freq: 3
+max_tokens: 10000
+}
+loader_cfg: {
+batch_size: 32
+num_workers: 8
+pin_memory: True
+batch_size_per_proc: 32
+effective_batch_size: 32
+}
+model_cfg: {
+vocab_size: 10000
+embed_dim: 128
+nhead: 2
+dim_feedforward: 512
+num_layers: 2
+num_classes: 2
+dropout: 0.1
+}
+optimizer_cfg: {
+lr: 0.0005
+weight_decay: 0.001
+}
+scheduler_cfg: {
+T_0: 5
+T_mult: 2
+}
+train_cfg: {
+max_epoch: 20
+do_valid: True
+do_test: True
+save_log: True
+save_best: True
+save_checkpoint: True
+resume_checkpoint: False
+valid_start: 1
+valid_step: 1
+test_start: 1
+test_step: 1
+save_dir: ./imdb_ckpt
+measure_best: accuracy
+measure_mode: max
+checkpoint_latest: True
+checkpoint_list: [10, 15]
+resume_path: None
+}
+world_size: 1
+
+2023-12-07 11:26:27 - INFO - ---------- Start of training. Good day! ----------
+2023-12-07 11:26:50 - INFO - [GPU0] | Epoch 1/20 | Train loss: 0.7045852541923523 | Valid loss: 0.6725325584411621 | Train scores: accuracy: 0.507 | Valid scores: accuracy: 0.507 | Time/epoch: 22.2024 seconds
+2023-12-07 11:26:50 - INFO - New best model: valid accuracy update from -inf to 0.507
+2023-12-07 11:26:50 - INFO - Saving best model: ./imdb_ckpt/run@231207_11:26:27/best_model_epoch1.pth ...
+2023-12-07 11:27:11 - INFO - [GPU0] | Epoch 2/20 | Train loss: 0.7534643411636353 | Valid loss: 0.6802284717559814 | Train scores: accuracy: 0.507 | Valid scores: accuracy: 0.507 | Time/epoch: 21.62994 seconds
+2023-12-07 11:27:33 - INFO - [GPU0] | Epoch 3/20 | Train loss: 0.6919930577278137 | Valid loss: 0.6904090642929077 | Train scores: accuracy: 0.534 | Valid scores: accuracy: 0.523 | Time/epoch: 21.7631 seconds
+2023-12-07 11:27:33 - INFO - New best model: valid accuracy update from 0.507 to 0.523
+2023-12-07 11:27:33 - INFO - Saving best model: ./imdb_ckpt/run@231207_11:26:27/best_model_epoch3.pth ...
+2023-12-07 11:27:54 - INFO - [GPU0] | Epoch 4/20 | Train loss: 0.6959711313247681 | Valid loss: 0.6841721534729004 | Train scores: accuracy: 0.507 | Valid scores: accuracy: 0.507 | Time/epoch: 21.05519 seconds
+2023-12-07 11:28:17 - INFO - [GPU0] | Epoch 5/20 | Train loss: 0.6934934854507446 | Valid loss: 0.684769868850708 | Train scores: accuracy: 0.515 | Valid scores: accuracy: 0.524 | Time/epoch: 22.65901 seconds
+2023-12-07 11:28:17 - INFO - New best model: valid accuracy update from 0.523 to 0.524
+2023-12-07 11:28:17 - INFO - Saving best model: ./imdb_ckpt/run@231207_11:26:27/best_model_epoch5.pth ...
+2023-12-07 11:28:38 - INFO - [GPU0] | Epoch 6/20 | Train loss: 0.688286304473877 | Valid loss: 0.6732247471809387 | Train scores: accuracy: 0.559 | Valid scores: accuracy: 0.551 | Time/epoch: 20.83556 seconds
+2023-12-07 11:28:38 - INFO - New best model: valid accuracy update from 0.524 to 0.551
+2023-12-07 11:28:38 - INFO - Saving best model: ./imdb_ckpt/run@231207_11:26:27/best_model_epoch6.pth ...
+2023-12-07 11:29:01 - INFO - [GPU0] | Epoch 7/20 | Train loss: 0.6925193667411804 | Valid loss: 0.6999635696411133 | Train scores: accuracy: 0.493 | Valid scores: accuracy: 0.493 | Time/epoch: 22.68254 seconds
+2023-12-07 11:29:23 - INFO - [GPU0] | Epoch 8/20 | Train loss: 0.6922671794891357 | Valid loss: 0.6641843318939209 | Train scores: accuracy: 0.523 | Valid scores: accuracy: 0.533 | Time/epoch: 22.46039 seconds
+2023-12-07 11:29:45 - INFO - [GPU0] | Epoch 9/20 | Train loss: 0.6666532158851624 | Valid loss: 0.6856168508529663 | Train scores: accuracy: 0.516 | Valid scores: accuracy: 0.502 | Time/epoch: 22.36131 seconds
+2023-12-07 11:30:07 - INFO - [GPU0] | Epoch 10/20 | Train loss: 0.6646021008491516 | Valid loss: 0.6668516397476196 | Train scores: accuracy: 0.543 | Valid scores: accuracy: 0.516 | Time/epoch: 21.61919 seconds
+2023-12-07 11:30:07 - INFO - Saving checkpoint: ./imdb_ckpt/run@231207_11:26:27/checkpoint_epoch10.pth ...
+2023-12-07 11:30:29 - INFO - [GPU0] | Epoch 11/20 | Train loss: 0.6474327445030212 | Valid loss: 0.6549488306045532 | Train scores: accuracy: 0.717 | Valid scores: accuracy: 0.619 | Time/epoch: 21.86839 seconds
+2023-12-07 11:30:29 - INFO - New best model: valid accuracy update from 0.551 to 0.619
+2023-12-07 11:30:29 - INFO - Saving best model: ./imdb_ckpt/run@231207_11:26:27/best_model_epoch11.pth ...
+2023-12-07 11:30:52 - INFO - [GPU0] | Epoch 12/20 | Train loss: 0.6507622599601746 | Valid loss: 0.6473718881607056 | Train scores: accuracy: 0.742 | Valid scores: accuracy: 0.65 | Time/epoch: 22.88627 seconds
+2023-12-07 11:30:52 - INFO - New best model: valid accuracy update from 0.619 to 0.65
+2023-12-07 11:30:52 - INFO - Saving best model: ./imdb_ckpt/run@231207_11:26:27/best_model_epoch12.pth ...
+2023-12-07 11:31:15 - INFO - [GPU0] | Epoch 13/20 | Train loss: 0.6626368165016174 | Valid loss: 0.6420648097991943 | Train scores: accuracy: 0.719 | Valid scores: accuracy: 0.644 | Time/epoch: 23.4461 seconds
+2023-12-07 11:31:51 - INFO - [GPU0] | Epoch 14/20 | Train loss: 0.652633547782898 | Valid loss: 0.639674961566925 | Train scores: accuracy: 0.746 | Valid scores: accuracy: 0.67 | Time/epoch: 35.50088 seconds
+2023-12-07 11:31:51 - INFO - New best model: valid accuracy update from 0.65 to 0.67
+2023-12-07 11:31:51 - INFO - Saving best model: ./imdb_ckpt/run@231207_11:26:27/best_model_epoch14.pth ...
+2023-12-07 11:32:26 - INFO - [GPU0] | Epoch 15/20 | Train loss: 0.6583216190338135 | Valid loss: 0.6401496529579163 | Train scores: accuracy: 0.751 | Valid scores: accuracy: 0.666 | Time/epoch: 35.14059 seconds
+2023-12-07 11:32:26 - INFO - Saving checkpoint: ./imdb_ckpt/run@231207_11:26:27/checkpoint_epoch15.pth ...
+2023-12-07 11:33:02 - INFO - [GPU0] | Epoch 16/20 | Train loss: 0.6219320297241211 | Valid loss: 0.6354403495788574 | Train scores: accuracy: 0.59 | Valid scores: accuracy: 0.561 | Time/epoch: 36.00468 seconds
+2023-12-07 11:33:38 - INFO - [GPU0] | Epoch 17/20 | Train loss: 0.6002461314201355 | Valid loss: 0.6319683194160461 | Train scores: accuracy: 0.755 | Valid scores: accuracy: 0.671 | Time/epoch: 36.0442 seconds
+2023-12-07 11:33:38 - INFO - New best model: valid accuracy update from 0.67 to 0.671
+2023-12-07 11:33:38 - INFO - Saving best model: ./imdb_ckpt/run@231207_11:26:27/best_model_epoch17.pth ...
+2023-12-07 11:34:14 - INFO - [GPU0] | Epoch 18/20 | Train loss: 0.6756136417388916 | Valid loss: 0.5975479483604431 | Train scores: accuracy: 0.65 | Valid scores: accuracy: 0.601 | Time/epoch: 35.29723 seconds
+2023-12-07 11:34:46 - INFO - [GPU0] | Epoch 19/20 | Train loss: 0.6119271516799927 | Valid loss: 0.6009341478347778 | Train scores: accuracy: 0.648 | Valid scores: accuracy: 0.596 | Time/epoch: 31.95647 seconds
+2023-12-07 11:35:20 - INFO - [GPU0] | Epoch 20/20 | Train loss: 0.6392252445220947 | Valid loss: 0.5789411067962646 | Train scores: accuracy: 0.785 | Valid scores: accuracy: 0.702 | Time/epoch: 33.87659 seconds
+2023-12-07 11:35:20 - INFO - New best model: valid accuracy update from 0.671 to 0.702
+2023-12-07 11:35:20 - INFO - Saving best model: ./imdb_ckpt/run@231207_11:26:27/best_model_epoch20.pth ...
+2023-12-07 11:35:20 - INFO - ---------- End of training. Total time: 532.45566 seconds ----------
