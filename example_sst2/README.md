@@ -1,4 +1,4 @@
-# Example: MNIST
+# Example: SST2
 
 This example shows how to customize the template,
 details at [`./report.pdf`](./report.pdf).

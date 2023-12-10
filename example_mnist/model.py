@@ -12,7 +12,7 @@ class MyModel(nn.Module):
             
             nn.Conv2d(in_channels=6, out_channels=16, kernel_size=5, stride=1),
             nn.Tanh(),
-            nn.AvgPool2d(kernel_size=2, stride=2),  # 5*5
+            nn.AvgPool2d(kernel_size=2, stride=2),
             
         )
         self.classifier = nn.Sequential(
@@ -29,7 +29,7 @@ class MyModel(nn.Module):
 
 
 if __name__ == '__main__':
-    """model info"""
+    """print model info"""
 
     model = MyModel(
         num_classes=10,

@@ -33,20 +33,6 @@ if __name__ == '__main__':
 
     torch.cuda.set_device(local_rank)
 
-    # your files and folders
-    nlp_train_data_file = "./NLP_TRAIN_DATA_FILE"  # TODO
-    nlp_valid_data_file = "./NLP_VALID_DATA_FILE"  # TODO
-    nlp_test_data_file = "./NLP_TEST_DATA_FILE"  # TODO
-    
-    """# for CV
-    cv_train_img_dir = "./CV_TRAIN_IMG_DIR"  # TODO
-    cv_valid_img_dir = "./CV_VALID_IMG_DIR"  # TODO
-    cv_test_img_dir = "./CV_TEST_IMG_DIR"  # TODO
-    cv_train_anno_file = "./CV_TRAIN_ANNO_FILE"  # TODO
-    cv_valid_anno_file = "./CV_VALID_ANNO_FILE"  # TODO
-    cv_test_anno_file = "./CV_TEST_ANNO_FILE"  # TODO
-    """
-
     # load config
     config_file = "./config.yaml"
     with open(config_file, 'r') as file:
@@ -57,60 +43,68 @@ if __name__ == '__main__':
     # set up seed for reproducibility
     setup_seed(config['seed'])
 
+    # load data from huggingface
+    cache_dir = "./.huggingface"
+    dataset_path = "DATASET_PATH"  # TODO
+    raw_dataset = load_dataset(path=dataset_path, cache_dir=cache_dir)
+
+    # split data
+    train_data = raw_dataset['train']  # TODO
+    valid_data = raw_dataset['valid']  # TODO
+    test_data = raw_dataset['test']  # TODO
+
     # preprocess
     text_transform, label_transform, _, _ = preprocess_nlp(
-        train_file=nlp_train_data_file,
+        train_text=train_data['text'],
         **config['preprocess_nlp_cfg'],
     )
     
     # create datasets
     train_dataset = TextDataset(
-        data_file=nlp_train_data_file,
+        data=train_data,
         text_transform=text_transform,
         label_transform=label_transform,
     )
     valid_dataset = TextDataset(
-        data_file=nlp_valid_data_file,
+        data=valid_data,
         text_transform=text_transform,
         label_transform=label_transform,
     )
     test_dataset = TextDataset(
-        data_file=nlp_test_data_file,
+        data=test_data,
         text_transform=text_transform,
         label_transform=label_transform,
     )
 
-    """# for CV
+    """# for cv
     # preprocess
     image_transform, label_transform = preprocess_cv()
     
     # create datasets
     train_dataset = ImageDataset(
-        annotations_file=cv_train_anno_file,
-        img_dir=cv_train_img_dir,
+        data=train_data,
         image_transform=image_transform,
         label_transform=label_transform,
     )
     valid_dataset = ImageDataset(
-        annotations_file=cv_valid_anno_file,
-        img_dir=cv_valid_img_dir,
+        data=valid_data,
         image_transform=image_transform,
         label_transform=label_transform,
     )
     test_dataset = ImageDataset(
-        annotations_file=cv_test_anno_file,
-        img_dir=cv_test_img_dir,
+        data=test_data,
         image_transform=image_transform,
         label_transform=label_transform,
     )
     """
 
     # get batch size for each process
-    batch_size_per_proc = config['loader_cfg']['batch_size'] // world_size
+    batch_size_all_proc = config['loader_cfg']['batch_size'] // config['train_cfg']['accum_step']
+    batch_size_per_proc = batch_size_all_proc // world_size
     config['loader_cfg'].update({'batch_size_per_proc': batch_size_per_proc})
 
     # the effective batch size
-    effective_batch_size = batch_size_per_proc * world_size
+    effective_batch_size = batch_size_per_proc * world_size * config['train_cfg']['accum_step']
     config['loader_cfg'].update({'effective_batch_size': effective_batch_size})
 
     num_workers = config['loader_cfg']['num_workers']
@@ -165,7 +159,7 @@ if __name__ == '__main__':
         T_mult=config['scheduler_cfg']['T_mult'],
     )
 
-    """# to see how lr change
+    """# plot how lr changes under certain kind of scheduler
     plot_lr_scheduler(
         scheduler_name="CosineAnnealingWarmRestarts",
         max_epoch=config['train_cfg']['max_epoch'],
@@ -174,15 +168,6 @@ if __name__ == '__main__':
         T_mult=config['scheduler_cfg']['T_mult'],
     )
     """
-
-    # wandb init, only for the process whose global rank is 0
-    if global_rank == 0 and config['wandb_cfg']['use_wandb'] is True:
-        wandb.init(
-            project=config['wandb_cfg']['project'],
-            notes=config['wandb_cfg']['notes'],
-            tags=config['wandb_cfg']['tags'],
-            config=config,
-        )
 
     # create trainer
     trainer = Trainer(
@@ -194,7 +179,7 @@ if __name__ == '__main__':
         train_loader=train_loader,
         valid_loader=valid_loader,
         scheduler=scheduler,
-        use_wandb=config['wandb_cfg']['use_wandb'],
+        use_wandb=config['use_wandb'],
     )
 
     # test methods
@@ -210,21 +195,20 @@ if __name__ == '__main__':
     trainer.train(
         **config['train_cfg'],
         config_to_log=config,
+        wandb_cfg=config['wandb_cfg'],
         test_methods=test_methods,
     )
 
-    # test
-    best_model_path = "./PATH_TO_BEST_MODEL.pth"  # TODO
+    # path to saved best model
+    best_model_path = os.path.join(trainer.save_dir, f'best_model_epoch{trainer.last_best_epoch}.pth')
+
+    # load best model, test on test dataset
     test_results, test_msg = trainer.test_epoch(
         loader=test_loader,
         methods=test_methods,
         resume_path=best_model_path,
     )
-    print("Scores on test dataset: ", test_msg)
-
-    # wandb finish
-    if global_rank == 0:
-        wandb.finish()
+    trainer.logger.info("Scores on test dataset: " + test_msg)
 
     # clean up DDP
     destroy_process_group()

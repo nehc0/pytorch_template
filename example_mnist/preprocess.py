@@ -36,12 +36,12 @@ import random
 
 
 if __name__ == '__main__':
-    """code to check preprocess, could run directly"""
+    """code for checking preprocess, could run directly"""
 
     cache_dir = "./.huggingface"
     dataset_path = "mnist"
 
-    # load dataset from huggingface
+    # load data from huggingface
     mnist_dataset = load_dataset(path=dataset_path, cache_dir=cache_dir)
 
     print("\nMNIST info:")

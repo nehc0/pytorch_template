@@ -1,11 +1,14 @@
 seed: 6
+use_wandb: True
 
 # config for wandb
 wandb_cfg:
-  use_wandb: True
   project: "my_awesome_project"
   notes: "training details on the process of global rank 0"
   tags: ["baseline", "paper1"]
+  watch_model: True
+  # required if `watch_model` is True
+  watch_model_freq: 1
 
 # config for NLP preprocess
 preprocess_nlp_cfg:
@@ -45,6 +48,7 @@ scheduler_cfg:
 # config for train
 train_cfg:
   max_epoch: 50
+  accum_step: 1
   do_valid: True
   do_test: True
   save_log: True

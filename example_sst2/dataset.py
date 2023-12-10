@@ -2,10 +2,9 @@ from torch.utils.data import Dataset
 
 
 class TextDataset(Dataset):
-    def __init__(self, texts, labels, text_transform=None, label_transform=None):
-        assert len(texts) == len(labels)
-        self.texts = texts
-        self.labels = labels
+    def __init__(self, data, text_transform=None, label_transform=None):
+        self.texts = data['text']
+        self.labels = data['label']
         self.text_transform = text_transform
         self.label_transform = label_transform
 

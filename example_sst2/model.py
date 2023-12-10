@@ -17,6 +17,7 @@ class MyModel(nn.Module):
                 nhead=nhead,
                 dim_feedforward=dim_feedforward,
                 dropout=dropout,
+                batch_first=True,
             ),
             num_layers=num_layers,
         )
@@ -41,14 +42,14 @@ class MyModel(nn.Module):
 
 
 if __name__ == '__main__':
-    """model info"""
+    """print model info"""
 
     model = MyModel(
-        vocab_size=20000,
-        embed_dim=300,
+        vocab_size=10000,
+        embed_dim=256,
         nhead=2,
-        dim_feedforward=1024,
-        num_layers=4,
+        dim_feedforward=512,
+        num_layers=2,
         num_classes=2,
     )
 

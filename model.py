@@ -16,8 +16,8 @@ class SelfAttention(nn.Module):
     def forward(self, x): 
         # input & output size: [batch_size, seq_length, input_dim]
         assert len(x.shape) == 3 and x.shape[2] == self.input_dim, \
-            f"SelfAttention expect input of shape [batch_size, seq_length, "\
-            "input_dim={self.input_dim}], got {list(x.shape)}"
+            "SelfAttention expect input of shape [batch_size, seq_length, "\
+            f"input_dim={self.input_dim}], got {list(x.shape)}"
         queries = self.query(x)
         keys = self.key(x)
         values = self.value(x)
@@ -42,6 +42,7 @@ class MyModel(nn.Module):
                 nhead=nhead,
                 dim_feedforward=dim_feedforward,
                 dropout=dropout,
+                batch_first=True,
             ),
             num_layers=num_layers,
         )
@@ -66,7 +67,7 @@ class MyModel(nn.Module):
 
 
 if __name__ == '__main__':
-    """model info"""
+    """print model info"""
 
     model = MyModel(
         vocab_size=20000,

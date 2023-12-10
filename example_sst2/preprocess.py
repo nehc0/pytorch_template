@@ -28,14 +28,14 @@ def preprocess_nlp(
         lemmatization=lemmatization,
     )
 
-    # yield tokens
-    def yield_tokens(data: list[str]):
-        for sentence in data:
-            tokens = tokenizer(sentence)
+    # generator function to yield tokens from texts
+    def yield_tokens(texts: list[str]):
+        for sentence in texts:
+            tokens = tokenizer(sentence=sentence)
             yield tokens
     
-    token_generator = yield_tokens(data=train_text)
-
+    token_generator = yield_tokens(texts=train_text)
+    
     # special tokens
     specials = ['<unk>', ]
 
@@ -73,19 +73,18 @@ import random
 
 
 if __name__ == '__main__':
-    """code to check preprocess, could run directly"""
+    """code for checking preprocess, could run directly"""
 
     # load data from huggingface
     cache_dir = "./.huggingface"
-    dataset_path = "imdb"
-    # only use a subset to save time
-    train_data = load_dataset(path=dataset_path, cache_dir=cache_dir, split="train[:1000]") 
-    print("\ntrain data info:")
-    print(train_data)
+    dataset_path = "SetFit/sst2"
+    raw_dataset = load_dataset(path=dataset_path, cache_dir=cache_dir)
+    print("\nSST2 info:")
+    print(raw_dataset)
 
     # example in train data
-    train_text = train_data['text']
-    train_label = train_data['label']
+    train_text = raw_dataset['train']['text']
+    train_label = raw_dataset['train']['label']
     rdm_idx = random.randint(0, len(train_label)-1)
     print("\nindex:", rdm_idx)
     print("text:", train_text[rdm_idx])
@@ -94,9 +93,9 @@ if __name__ == '__main__':
     text_transform, _, vocab, tokenizer = preprocess_nlp(train_text=train_text)
 
     # test preprocess
-    test_tokens = ['happy', '<unk>', 'Happy', 'good', 'bad']
-    test_indices = [0, 1, 2, 3, 4, 5]
-    test_sentence = "This's a really good movie."
+    test_tokens = ['fantastic', '<unk>', 'Fantastic', "I", "beautiful"]
+    test_indices = [0, 1, 2, 3, 4, 5, 6]
+    test_sentence = "The movie failed to meet my expectations."
     print("\nvocab size: ", len(vocab))
     print(f"indices of {test_tokens}: ", vocab.lookup_indices(test_tokens))
     print(f"tokens of {test_indices}: ", vocab.lookup_tokens(test_indices))

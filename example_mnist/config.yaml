@@ -1,16 +1,19 @@
 seed: 6
+use_wandb: True
 
 # config for wandb
 wandb_cfg:
-  use_wandb: True
   project: "MNIST"
   notes: "training details on the process of global rank 0"
   tags: ["baseline", "LeNet5"]
+  watch_model: True
+  # required if `watch_model` is True
+  watch_model_freq: 2
 
 # config for loader
 loader_cfg:
   batch_size: 32
-  num_workers: 8
+  num_workers: 24
   pin_memory: True
 
 # config for model
@@ -29,7 +32,8 @@ scheduler_cfg:
 
 # config for train
 train_cfg:
-  max_epoch: 50
+  max_epoch: 15
+  accum_step: 2
   do_valid: True
   do_test: True
   save_log: True
@@ -37,10 +41,10 @@ train_cfg:
   save_checkpoint: True
   resume_checkpoint: False
   # required if `do_valid` is True
-  valid_start: 10
+  valid_start: 1
   valid_step: 1
   # required if `do_test` is True
-  test_start: 20
+  test_start: 1
   test_step: 2
   # required if `save_*` is True
   save_dir: "./mnist_ckpt"
@@ -49,6 +53,6 @@ train_cfg:
   measure_mode: "max"
   # required if `save_checkpoint` is True
   checkpoint_latest: True
-  checkpoint_list: [30, 40, 50]
+  checkpoint_list: [5, 10, 15]
   # required if `resume_checkpoint` is True
   resume_path: null

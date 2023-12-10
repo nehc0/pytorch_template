@@ -13,6 +13,7 @@ import time
 from tqdm import tqdm
 import warnings
 from datetime import datetime
+from collections import OrderedDict
 
 from utils import dict_to_str
 
@@ -32,12 +33,13 @@ class Trainer:
         train_loader: DataLoader,
         valid_loader: DataLoader | None = None,
         scheduler: lr_scheduler.LRScheduler | None = None,
-        use_wandb: bool = False,  # if True, wandb should be initialized in advance
+        use_wandb: bool = False,
     )
 
     train(
         self,
         max_epoch: int,
+        accum_step: int = 1,  # for gradient accumulation
         do_valid: bool = False,  # whether to do validation during training
         do_test: bool = False,  # whether to test scores during training
         save_log: bool = False,  # whether to save log
@@ -45,9 +47,10 @@ class Trainer:
         save_checkpoint: bool = False,  # whether to save checkpoint
         resume_checkpoint: bool = False,  # train from checkpoint or from scratch
         config_to_log: dict | None = None,  # config you want to log
+        wandb_cfg: dict | None = None,  # config for wandb
         **kwargs,
     ) 
-        # main training process
+        # training
 
     test_epoch(
         self, 
@@ -58,19 +61,20 @@ class Trainer:
         # test an epoch on given data by multiple given score methods
         # return test results and test message
 
-    _train_epoch(self, epoch: int) -> float
+    _train_epoch(self, epoch: int, accum_step: int = 1) -> float
         # train an epoch on `self.train_loader`
-        # return loss of last batch
+        # return loss
 
     _valid_epoch(self) -> float
         # validate an epoch on `self.valid_loader`
-        # return loss of last batch
+        # return loss
 
     _set_logger(self, save_log: bool = False)
         # set logger for trainer
 
     _save_checkpoint(self, epoch: int, save_mode: str | None = None)
         # save checkpoint for best model, current epoch, or specified epoch
+        # only save on process of local rank 0
     
     _resume_checkpoint(self, resume_path: str) -> int
         # resume checkpoint
@@ -87,15 +91,15 @@ class Trainer:
         train_loader: DataLoader,
         valid_loader: DataLoader | None = None,
         scheduler: lr_scheduler.LRScheduler | None = None,
-        use_wandb: bool = False,  # if True, wandb should be initialized in advance
+        use_wandb: bool = False,
     ):
         # device
         self.device = local_rank
         self.global_rank = global_rank
 
         # construct the DDP model
-        self.model = model.to(self.device)
-        self.model = DDP(self.model, device_ids=[self.device])
+        model = model.to(self.device)
+        self.model = DDP(model, device_ids=[self.device])
 
         self.criterion = criterion
         self.optimizer = optimizer
@@ -104,7 +108,7 @@ class Trainer:
         self.scheduler = scheduler
 
         # wandb, only for the process whose global rank is 0
-        if self.global_rank == 0 and use_wandb is True and wandb.run is not None:
+        if self.global_rank == 0 and use_wandb is True:
             self.use_wandb = True
         else:
             self.use_wandb = False
@@ -113,6 +117,7 @@ class Trainer:
     def train(
         self,
         max_epoch: int,
+        accum_step: int = 1,  # for gradient accumulation
         do_valid: bool = False,  # whether to do validation during training
         do_test: bool = False,  # whether to test scores during training
         save_log: bool = False,  # whether to save log
@@ -120,9 +125,10 @@ class Trainer:
         save_checkpoint: bool = False,  # whether to save checkpoint
         resume_checkpoint: bool = False,  # train from checkpoint or from scratch
         config_to_log: dict | None = None,  # config you want to log
+        wandb_cfg: dict | None = None,  # config for wandb
         **kwargs,
     ): 
-        """main training process
+        """training
 
         **kwargs
         --------
@@ -166,6 +172,10 @@ class Trainer:
                 # path to checkpoint to resume
         """
         # assert config correctness
+        if accum_step not in range(1, len(self.train_loader)):
+            raise ValueError(
+                "Trainer.train(): requires `accum_step` in range(1, len(self.train_loader))"
+            )
         if do_valid is True:
             assert self.valid_loader is not None, \
                 "Trainer.train(): `do_valid` is True, "\
@@ -224,24 +234,41 @@ class Trainer:
         if config_to_log is not None:
             assert type(config_to_log) is dict, \
                 "Trainer.train(): `config_to_log` should be dict or None"
+        if self.use_wandb is True:
+            assert type(wandb_cfg) is dict, \
+                "Trainer.train(): as `self.use_wandb` is True, `wandb_cfg` should be dict"
+
+        # init wandb for this run
+        if self.use_wandb is True:
+            wandb.init(
+                project=wandb_cfg['project'],
+                notes=wandb_cfg['notes'],
+                tags=wandb_cfg['tags'],
+            )
+            # config
+            if config_to_log is not None:
+                wandb.config.update(config_to_log)
+            # watch model
+            if wandb_cfg['watch_model'] is True:
+                wandb.watch(models=self.model, log="all", log_freq=wandb_cfg['watch_model_freq'])
         
-        # set `self.save_dir` for this run
+        # set `self.save_dir`
         if any([save_log, save_best, save_checkpoint]) is True:
             sub_dir = "run@" + datetime.now().strftime("%y%m%d_%H:%M:%S")
             self.save_dir = os.path.join(kwargs['save_dir'], sub_dir)
             if self.device == 0 and not os.path.exists(self.save_dir):
                 os.makedirs(self.save_dir)
         
-        # set `self.logger` for this run
+        # set `self.logger`
         self._set_logger(save_log)
 
-        # set `self.last_best_epoch` for this run
+        # set `self.last_best_epoch`
         if save_best is True:
-            self.last_best_epoch = -1
+            self.last_best_epoch = 0
 
         # config to log
         if self.device == 0 and config_to_log is not None:
-            cfg_msg = "---------- config ----------\n" 
+            cfg_msg = "---------------- config ----------------\n" 
             cfg_msg += dict_to_str(config_to_log)
             self.logger.info(cfg_msg)
 
@@ -300,7 +327,7 @@ class Trainer:
             epoch_start_time = time.time()
 
             # train
-            train_loss = self._train_epoch(epoch)
+            train_loss = self._train_epoch(epoch=epoch, accum_step=accum_step)
             self.train_loss_list.append(train_loss)
             if self.scheduler is not None:
                 self.scheduler.step()
@@ -339,13 +366,14 @@ class Trainer:
 
             self.logger.info(msg)
 
-            # save best, only take place if local rank is 0
+            # save best
             best_score_flag = 0
-            if self.device == 0 and save_best is True and valid_flag:
+            if save_best is True and valid_flag:
                 if kwargs['measure_best'] == 'loss' and valid_loss < min_loss:
                     self.logger.info(f"New best model: valid loss update from {min_loss} to {valid_loss}")
                     min_loss = valid_loss
                     self._save_checkpoint(epoch, save_mode='best')
+                    self.last_best_epoch = epoch
                 if kwargs['measure_best'] != 'loss' and test_flag:
                     measure_score = valid_score[score_idx]
                     if (kwargs['measure_mode'] == 'max' and best_score < measure_score) \
@@ -355,9 +383,10 @@ class Trainer:
                             f"valid {kwargs['measure_best']} update from {best_score} to {measure_score}")
                         best_score = measure_score
                         self._save_checkpoint(epoch, save_mode='best')
+                        self.last_best_epoch = epoch
 
-            # save checkpoint, only take place if local rank is 0
-            if self.device == 0 and save_checkpoint is True:
+            # save checkpoint
+            if save_checkpoint is True:
                 if kwargs['checkpoint_latest'] is True:
                     self._save_checkpoint(epoch, save_mode='latest')
                 if epoch in kwargs['checkpoint_list']:
@@ -399,10 +428,11 @@ class Trainer:
         if self.device == 0:
             self.logger.info(f"---------- End of training. Total time: {round(total_time, 5)} seconds ----------")
 
-        # reset config for next run
-        self.save_dir = None
-        self.logger = None
-        self.last_best_epoch = -1
+        # wandb finish
+        if self.use_wandb is True:
+            if wandb_cfg['watch_model'] is True:
+                wandb.unwatch(models=self.model)
+            wandb.finish()
 
 
     def test_epoch(
@@ -491,7 +521,7 @@ class Trainer:
         return test_results, test_msg
     
 
-    def _train_epoch(self, epoch: int) -> float:
+    def _train_epoch(self, epoch: int, accum_step: int = 1) -> float:
         """train an epoch on `self.train_loader`
 
         will update model parameters
@@ -499,7 +529,7 @@ class Trainer:
         Returns
         -------
         : float
-            # loss of the last batch
+            # loss
         """
         # to make shuffling work properly across multiple epochs
         # otherwise, the same ordering will be used in each epoch
@@ -507,7 +537,9 @@ class Trainer:
 
         self.model.train()
 
-        for features, labels in tqdm(self.train_loader):
+        total_loss = 0
+
+        for batch_idx, (features, labels) in enumerate(tqdm(self.train_loader)):
             # to device
             features = features.to(self.device)
             labels = labels.to(self.device)
@@ -517,17 +549,27 @@ class Trainer:
             
             # compute loss
             loss = self.criterion(out, labels)
-            
-            # remove gradient from previous passes
-            self.optimizer.zero_grad()
-            
-            # backprop
+
+            total_loss += loss.item()
+
+            # normalize loss to account for batch accumulation
+            loss = loss / accum_step
+
+            # backward pass
             loss.backward()
             
-            # parameters update
-            self.optimizer.step()
+            # gradient accumulation
+            if ((batch_idx+1) % accum_step == 0) or (batch_idx+1 == len(self.train_loader)):
+
+                # parameters update
+                self.optimizer.step()
+
+                # remove gradient from previous passes
+                self.optimizer.zero_grad()
     
-        return loss.item()
+        avg_loss = total_loss / len(self.train_loader)
+
+        return avg_loss
     
 
     def _valid_epoch(self) -> float:
@@ -538,9 +580,11 @@ class Trainer:
         Returns
         -------
         : float
-            # loss of the last batch
+            # loss
         """
         self.model.eval()
+
+        total_loss = 0
 
         with torch.no_grad():
             for features, labels in tqdm(self.valid_loader):
@@ -553,8 +597,12 @@ class Trainer:
 
                 # compute loss
                 loss = self.criterion(out, labels)
+
+                total_loss += loss.item()
+
+        avg_loss = total_loss / len(self.valid_loader)
                     
-        return loss.item()
+        return avg_loss
     
 
     def _set_logger(self, save_log: bool = False):
@@ -583,7 +631,13 @@ class Trainer:
     def _save_checkpoint(self, epoch: int, save_mode: str | None = None):
         """save checkpoint for best model, latest epoch, or specified epoch
 
+        only save on process of local rank 0
+
         """
+        # only save checkpoint on process of local rank 0
+        if self.device != 0:
+            return
+
         model_class_name = type(self.model).__name__
 
         checkpoint = {
@@ -600,7 +654,6 @@ class Trainer:
             filename = os.path.join(self.save_dir, f'best_model_epoch{epoch}.pth')
             torch.save(checkpoint, filename)
             self.logger.info(f"Saving best model: {filename} ...")
-            self.last_best_epoch = epoch
 
         if save_mode == 'latest':    # only keep one latest checkpoint, and no log for it
             del_filename = os.path.join(self.save_dir, f'latest_checkpoint_epoch{epoch-1}.pth')
@@ -623,20 +676,25 @@ class Trainer:
         : int
             # start epoch
         """
-        if self.logger is not None:
-            self.logger.info(f"Loading checkpoint: {resume_path} ...")
-        else:
-            print(f"Loading checkpoint: {resume_path} ...")
+        self.logger.info(f"Loading checkpoint: {resume_path} ...")
 
         checkpoint = torch.load(resume_path)
 
-        self.model.load_state_dict(checkpoint['model_state_dict'])
+        # wrap model state dict manually for DDP model
+        model_state_dict = checkpoint['model_state_dict']
+        new_state_dict = OrderedDict()
+        for k, v in model_state_dict.items():
+            if 'module' not in k:
+                k = 'module.' + k
+            else:
+                k = k.replace('features.module.', 'module.features.')
+            new_state_dict[k] = v
+
+        self.model.load_state_dict(new_state_dict)
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         start_epoch = checkpoint['epoch'] + 1
 
-        if self.logger is not None:
-            self.logger.info(f"Checkpoint loaded. Resume training from epoch {start_epoch}")
-        else:
-            print("Checkpoint loaded.")
+        self.logger.info("Checkpoint loaded successfully.")
 
         return start_epoch
+        

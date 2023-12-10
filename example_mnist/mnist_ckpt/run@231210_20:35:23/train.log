@@ -1,0 +1,84 @@
+2023-12-10 20:35:23 - INFO - ---------------- config ----------------
+seed: 6
+use_wandb: True
+wandb_cfg: {
+project: MNIST
+notes: training details on the process of global rank 0
+tags: ['baseline', 'LeNet5']
+watch_model: True
+watch_model_freq: 2
+}
+loader_cfg: {
+batch_size: 32
+num_workers: 24
+pin_memory: True
+batch_size_per_proc: 16
+effective_batch_size: 32
+}
+model_cfg: {
+num_classes: 10
+}
+optimizer_cfg: {
+lr: 0.001
+weight_decay: 0.01
+}
+scheduler_cfg: {
+T_0: 5
+T_mult: 2
+}
+train_cfg: {
+max_epoch: 15
+accum_step: 2
+do_valid: True
+do_test: True
+save_log: True
+save_best: True
+save_checkpoint: True
+resume_checkpoint: False
+valid_start: 1
+valid_step: 1
+test_start: 1
+test_step: 2
+save_dir: ./mnist_ckpt
+measure_best: accuracy
+measure_mode: max
+checkpoint_latest: True
+checkpoint_list: [5, 10, 15]
+resume_path: None
+}
+world_size: 1
+
+2023-12-10 20:35:23 - INFO - ---------- Start of training. Good day! ----------
+2023-12-10 20:36:08 - INFO - [GPU0] | Epoch 1/15 | Train loss: 0.6184607636362314 | Valid loss: 0.32975570465922355 | Train scores: accuracy: 0.8946833333333334 | Valid scores: accuracy: 0.8936 | Time/epoch: 44.49075 seconds
+2023-12-10 20:36:08 - INFO - New best model: valid accuracy update from -inf to 0.8936
+2023-12-10 20:36:08 - INFO - Saving best model: ./mnist_ckpt/run@231210_20:35:23/best_model_epoch1.pth ...
+2023-12-10 20:36:35 - INFO - [GPU0] | Epoch 2/15 | Train loss: 0.30423867918948333 | Valid loss: 0.26723977186232806 | Time/epoch: 26.83112 seconds
+2023-12-10 20:37:19 - INFO - [GPU0] | Epoch 3/15 | Train loss: 0.23818899167006213 | Valid loss: 0.21364114101156592 | Train scores: accuracy: 0.9292666666666667 | Valid scores: accuracy: 0.9304 | Time/epoch: 44.14888 seconds
+2023-12-10 20:37:19 - INFO - New best model: valid accuracy update from 0.8936 to 0.9304
+2023-12-10 20:37:19 - INFO - Saving best model: ./mnist_ckpt/run@231210_20:35:23/best_model_epoch3.pth ...
+2023-12-10 20:37:38 - INFO - [GPU0] | Epoch 4/15 | Train loss: 0.19209467938927313 | Valid loss: 0.17530351312309503 | Time/epoch: 19.60061 seconds
+2023-12-10 20:38:12 - INFO - [GPU0] | Epoch 5/15 | Train loss: 0.1666379595493277 | Valid loss: 0.16858035744428634 | Train scores: accuracy: 0.9503 | Valid scores: accuracy: 0.9488 | Time/epoch: 33.16078 seconds
+2023-12-10 20:38:12 - INFO - New best model: valid accuracy update from 0.9304 to 0.9488
+2023-12-10 20:38:12 - INFO - Saving best model: ./mnist_ckpt/run@231210_20:35:23/best_model_epoch5.pth ...
+2023-12-10 20:38:12 - INFO - Saving checkpoint: ./mnist_ckpt/run@231210_20:35:23/checkpoint_epoch5.pth ...
+2023-12-10 20:38:35 - INFO - [GPU0] | Epoch 6/15 | Train loss: 0.22016923943335812 | Valid loss: 0.20761768354177476 | Time/epoch: 22.95217 seconds
+2023-12-10 20:39:20 - INFO - [GPU0] | Epoch 7/15 | Train loss: 0.19851591549733033 | Valid loss: 0.19520873398408295 | Train scores: accuracy: 0.9383166666666667 | Valid scores: accuracy: 0.9376 | Time/epoch: 45.53866 seconds
+2023-12-10 20:39:47 - INFO - [GPU0] | Epoch 8/15 | Train loss: 0.18053556230142712 | Valid loss: 0.17047816651165484 | Time/epoch: 26.39002 seconds
+2023-12-10 20:40:31 - INFO - [GPU0] | Epoch 9/15 | Train loss: 0.16655466031444568 | Valid loss: 0.15792064645327628 | Train scores: accuracy: 0.9503833333333334 | Valid scores: accuracy: 0.9499 | Time/epoch: 44.30813 seconds
+2023-12-10 20:40:31 - INFO - New best model: valid accuracy update from 0.9488 to 0.9499
+2023-12-10 20:40:31 - INFO - Saving best model: ./mnist_ckpt/run@231210_20:35:23/best_model_epoch9.pth ...
+2023-12-10 20:41:03 - INFO - [GPU0] | Epoch 10/15 | Train loss: 0.14983664285428822 | Valid loss: 0.1342234946101904 | Time/epoch: 32.29825 seconds
+2023-12-10 20:41:03 - INFO - Saving checkpoint: ./mnist_ckpt/run@231210_20:35:23/checkpoint_epoch10.pth ...
+2023-12-10 20:41:42 - INFO - [GPU0] | Epoch 11/15 | Train loss: 0.13744774532119433 | Valid loss: 0.13946459446437656 | Train scores: accuracy: 0.9563833333333334 | Valid scores: accuracy: 0.9588 | Time/epoch: 38.60925 seconds
+2023-12-10 20:41:42 - INFO - New best model: valid accuracy update from 0.9499 to 0.9588
+2023-12-10 20:41:42 - INFO - Saving best model: ./mnist_ckpt/run@231210_20:35:23/best_model_epoch11.pth ...
+2023-12-10 20:42:06 - INFO - [GPU0] | Epoch 12/15 | Train loss: 0.12296691284878179 | Valid loss: 0.13702463453263045 | Time/epoch: 24.50085 seconds
+2023-12-10 20:42:43 - INFO - [GPU0] | Epoch 13/15 | Train loss: 0.11353024330893531 | Valid loss: 0.11383969978764653 | Train scores: accuracy: 0.9667333333333333 | Valid scores: accuracy: 0.9649 | Time/epoch: 36.85932 seconds
+2023-12-10 20:42:43 - INFO - New best model: valid accuracy update from 0.9588 to 0.9649
+2023-12-10 20:42:43 - INFO - Saving best model: ./mnist_ckpt/run@231210_20:35:23/best_model_epoch13.pth ...
+2023-12-10 20:43:10 - INFO - [GPU0] | Epoch 14/15 | Train loss: 0.10538095647416389 | Valid loss: 0.1139027450280264 | Time/epoch: 26.88663 seconds
+2023-12-10 20:43:43 - INFO - [GPU0] | Epoch 15/15 | Train loss: 0.10087066561384127 | Valid loss: 0.10569899849928915 | Train scores: accuracy: 0.9682 | Valid scores: accuracy: 0.9658 | Time/epoch: 33.05845 seconds
+2023-12-10 20:43:43 - INFO - New best model: valid accuracy update from 0.9649 to 0.9658
+2023-12-10 20:43:43 - INFO - Saving best model: ./mnist_ckpt/run@231210_20:35:23/best_model_epoch15.pth ...
+2023-12-10 20:43:43 - INFO - Saving checkpoint: ./mnist_ckpt/run@231210_20:35:23/checkpoint_epoch15.pth ...
+2023-12-10 20:43:43 - INFO - ---------- End of training. Total time: 499.7208 seconds ----------

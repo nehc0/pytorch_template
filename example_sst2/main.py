@@ -47,43 +47,43 @@ if __name__ == '__main__':
 
     # load data from huggingface
     cache_dir = "./.huggingface"
-    dataset_path = "imdb"
-    
-    imdb_dataset = load_dataset(path=dataset_path, cache_dir=cache_dir)
-    imdb_dataset_shuffled = imdb_dataset.shuffle(seed=0)
+    dataset_path = "SetFit/sst2"
+    raw_dataset = load_dataset(path=dataset_path, cache_dir=cache_dir)
 
-    # only use a subset to save time
-    train_texts = imdb_dataset_shuffled['train']['text'][:1000]
-    train_labels = imdb_dataset_shuffled['train']['label'][:1000]
-    valid_texts = imdb_dataset_shuffled['test']['text'][:1000]
-    valid_labels = imdb_dataset_shuffled['test']['label'][:1000]
+    train_data = raw_dataset['train']
+    valid_data = raw_dataset['validation']
+    test_data = raw_dataset['test']
     
     # preprocess
     text_transform, label_transform, _, _ = preprocess_nlp(
-        train_text = train_texts,
+        train_text = train_data['text'],
         **config['preprocess_nlp_cfg'],
     )
     
     # create datasets
     train_dataset = TextDataset(
-        texts=train_texts,
-        labels=train_labels,
+        data=train_data,
         text_transform=text_transform,
         label_transform=label_transform,
     )
     valid_dataset = TextDataset(
-        texts=valid_texts,
-        labels=valid_labels,
+        data=valid_data,
+        text_transform=text_transform,
+        label_transform=label_transform,
+    )
+    test_dataset = TextDataset(
+        data=test_data,
         text_transform=text_transform,
         label_transform=label_transform,
     )
 
     # get batch size for each process
-    batch_size_per_proc = config['loader_cfg']['batch_size'] // world_size
+    batch_size_all_proc = config['loader_cfg']['batch_size'] // config['train_cfg']['accum_step']
+    batch_size_per_proc = batch_size_all_proc // world_size
     config['loader_cfg'].update({'batch_size_per_proc': batch_size_per_proc})
 
     # the effective batch size
-    effective_batch_size = batch_size_per_proc * world_size
+    effective_batch_size = batch_size_per_proc * world_size * config['train_cfg']['accum_step']
     config['loader_cfg'].update({'effective_batch_size': effective_batch_size})
 
     num_workers = config['loader_cfg']['num_workers']
@@ -108,6 +108,15 @@ if __name__ == '__main__':
         sampler=DistributedSampler(valid_dataset),
         collate_fn=collate_fn,
     )
+    test_loader = DataLoader(
+        dataset=test_dataset,
+        batch_size=batch_size_per_proc,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
+        shuffle=False,
+        sampler=DistributedSampler(test_dataset),
+        collate_fn=collate_fn,
+    )
 
     # create model
     model = MyModel(**config['model_cfg'])
@@ -129,15 +138,6 @@ if __name__ == '__main__':
         T_mult=config['scheduler_cfg']['T_mult'],
     )
 
-    # wandb init, only for the process whose global rank is 0
-    if global_rank == 0 and config['wandb_cfg']['use_wandb'] is True:
-        wandb.init(
-            project=config['wandb_cfg']['project'],
-            notes=config['wandb_cfg']['notes'],
-            tags=config['wandb_cfg']['tags'],
-            config=config,
-        )
-
     # create trainer
     trainer = Trainer(
         local_rank=local_rank,
@@ -148,7 +148,7 @@ if __name__ == '__main__':
         train_loader=train_loader,
         valid_loader=valid_loader,
         scheduler=scheduler,
-        use_wandb=config['wandb_cfg']['use_wandb'],
+        use_wandb=config['use_wandb'],
     )
 
     # test methods
@@ -164,12 +164,20 @@ if __name__ == '__main__':
     trainer.train(
         **config['train_cfg'],
         config_to_log=config,
+        wandb_cfg=config['wandb_cfg'],
         test_methods=test_methods,
     )
 
-    # wandb finish
-    if global_rank == 0:
-        wandb.finish()
+    # path to saved best model
+    best_model_path = os.path.join(trainer.save_dir, f'best_model_epoch{trainer.last_best_epoch}.pth')
+
+    # load best model, test on test dataset
+    test_results, test_msg = trainer.test_epoch(
+        loader=test_loader,
+        methods=test_methods,
+        resume_path=best_model_path,
+    )
+    trainer.logger.info("Scores on test dataset: " + test_msg)
 
     # clean up DDP
     destroy_process_group()

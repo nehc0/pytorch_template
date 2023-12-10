@@ -6,7 +6,7 @@ from utils import Tokenizer, load_json
 
 
 def preprocess_nlp(
-    train_file: str,
+    train_text: list[str],
     lowercase: bool = True,
     rm_punctuation: bool = True,
     rm_stopword: bool = False,
@@ -28,6 +28,15 @@ def preprocess_nlp(
         lemmatization=lemmatization,
     )
 
+    # generator function to yield tokens from texts
+    def yield_tokens(texts: list[str]):
+        for sentence in texts:
+            tokens = tokenizer(sentence=sentence)
+            yield tokens
+    
+    token_generator = yield_tokens(texts=train_text)
+
+    """# for json file
     # load train data from json
     train_data = load_json(json_file=train_file)
 
@@ -38,17 +47,8 @@ def preprocess_nlp(
             yield tokens
 
     token_generator = yield_tokens(data=train_data)
-
-    """# for .txt file, load and tokenize line by line
-    def yield_tokens(path):
-        with open(path, 'r') as f:
-            for line in f:
-                tokens = tokenizer(line)
-                yield tokens
-    
-    token_generator = yield_tokens(path=train_file)
     """
-
+   
     # special tokens
     specials = ['<unk>', ]
 
@@ -71,9 +71,9 @@ def preprocess_nlp(
         long_tensor = torch.tensor(vocab(tokens), dtype=torch.int64)
         return long_tensor
 
-    # label transform, implement it yourself
-    def label_transform(label):
-        raise NotImplementedError("label_transform function not implemented!")  # TODO
+    # label transform
+    def label_transform(label: int) -> torch.int64:
+        return torch.tensor(label, dtype=torch.int64)
 
     return text_transform, label_transform, vocab, tokenizer
 
@@ -106,9 +106,9 @@ def preprocess_cv():
         v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),  # of ImageNet
     ])
 
-    # label transform, implement it yourself
-    def label_transform(label):
-        raise NotImplementedError("label_transform function not implemented!")  # TODO
+    # label transform
+    def label_transform(label: int) -> torch.int64:
+        return torch.tensor(label, dtype=torch.int64)
 
     return image_transform, label_transform
 
@@ -117,15 +117,21 @@ def preprocess_cv():
 
 
 if __name__ == '__main__':
-    """code to check preprocess"""
+    """code for checking preprocess, could run directly"""
 
-    # check NLP
-    example_texts = "./EXAMPLE_TEXTS.json"  # TODO
-    test_tokens = ['happy', '<unk>', 'Happy']
-    test_indices = [0, 1, 2, 3]
-    test_sentence = "Here's a sentence for testing."
+    # check nlp
+    test_texts = [
+        "The movie was absolutely fantastic, and I was captivated from start to finish.",
+        "Despite its initial hype, the new restaurant in town failed to meet my expectations.",
+        "I feel so grateful for the support and encouragement I received during a challenging time.",
+        "The customer service experience was disappointing; it took forever to get a response.",
+        "This book is a masterpiece, evoking a range of emotions with its beautifully written prose.",
+    ]
+    test_tokens = ['fantastic', '<unk>', 'Fantastic', "I", "beautiful"]
+    test_indices = [0, 1, 2, 3, 4, 5, 6]
+    test_sentence = "The movie failed to meet my expectations."
 
-    text_transform, _, vocab, tokenizer = preprocess_nlp(example_texts)
+    text_transform, _, vocab, tokenizer = preprocess_nlp(train_text=test_texts)
     
     print("vocab size: ", len(vocab))
     print(f"indices of {test_tokens}: ", vocab.lookup_indices(test_tokens))

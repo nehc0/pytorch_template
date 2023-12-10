@@ -1,6 +1,6 @@
 """utility functions and classes for pytorch
 
-* def collate_fn(data: list[tuple[torch.Tensor, torch.Tensor]])
+* def collate_fn(data: list[tuple[torch.Tensor, torch.Tensor]]) -> tuple[torch.Tensor, torch.Tensor]
 * def setup_seed(seed: int) -> None
 * class Tokenizer:
     def __init__(
@@ -32,11 +32,26 @@ import torch
 from torch.nn.utils.rnn import pad_sequence
 
 
-def collate_fn(data: list[tuple[torch.Tensor, torch.Tensor]]):
-    tensors, targets = zip(*data)
-    features = pad_sequence(tensors, batch_first=True)
-    targets = torch.stack(targets)
-    return features, targets
+def collate_fn(data: list[tuple[torch.Tensor, torch.Tensor]]) -> tuple[torch.Tensor, torch.Tensor]:
+    """pass to Dataloader directly
+
+    Parameters
+    ----------
+    data: list[tuple[torch.Tensor, torch.Tensor]]
+        # a list of tuples with (feature, label), the length of the list is batch size
+        # 'feature' is a tensor of shape [seq_length, *], and 'label' is scalar
+
+    Returns
+    -------
+    : tuple[torch.Tensor, torch.Tensor]
+        # (features, labels)
+        # 'features' has shape [batch_size, pad_seq_length, *], and 'labels' has shape [batch_size]
+
+    """
+    features, labels = zip(*data)
+    features = pad_sequence(features, batch_first=True)
+    labels = torch.stack(labels)
+    return features, labels
 
 
 #------------------------------------- split line -------------------------------------#

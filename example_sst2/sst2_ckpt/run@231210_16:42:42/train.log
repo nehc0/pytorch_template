@@ -1,0 +1,93 @@
+2023-12-10 16:42:42 - INFO - ---------------- config ----------------
+seed: 6
+use_wandb: True
+wandb_cfg: {
+project: SST2
+notes: training details on the process of global rank 0
+tags: ['SST2', 'TransformerEncoder']
+watch_model: True
+watch_model_freq: 1
+}
+preprocess_nlp_cfg: {
+lowercase: True
+rm_punctuation: True
+rm_stopword: False
+lemmatization: True
+min_freq: 3
+max_tokens: 10000
+}
+loader_cfg: {
+batch_size: 32
+num_workers: 24
+pin_memory: True
+batch_size_per_proc: 32
+effective_batch_size: 32
+}
+model_cfg: {
+vocab_size: 10000
+embed_dim: 128
+nhead: 2
+dim_feedforward: 512
+num_layers: 1
+num_classes: 2
+dropout: 0.1
+}
+optimizer_cfg: {
+lr: 0.001
+weight_decay: 0.01
+}
+scheduler_cfg: {
+T_0: 4
+T_mult: 2
+}
+train_cfg: {
+max_epoch: 10
+accum_step: 1
+do_valid: True
+do_test: True
+save_log: True
+save_best: True
+save_checkpoint: True
+resume_checkpoint: False
+valid_start: 1
+valid_step: 1
+test_start: 1
+test_step: 1
+save_dir: ./sst2_ckpt
+measure_best: accuracy
+measure_mode: max
+checkpoint_latest: True
+checkpoint_list: [4, 8]
+resume_path: None
+}
+world_size: 1
+
+2023-12-10 16:42:42 - INFO - ---------- Start of training. Good day! ----------
+2023-12-10 16:43:01 - INFO - [GPU0] | Epoch 1/10 | Train loss: 0.6704142692451653 | Valid loss: 0.6239489380802427 | Train scores: accuracy: 0.6761560693641618 | Valid scores: accuracy: 0.6628440366972477 | Time/epoch: 18.68106 seconds
+2023-12-10 16:43:01 - INFO - New best model: valid accuracy update from -inf to 0.6628440366972477
+2023-12-10 16:43:01 - INFO - Saving best model: ./sst2_ckpt/run@231210_16:42:42/best_model_epoch1.pth ...
+2023-12-10 16:43:21 - INFO - [GPU0] | Epoch 2/10 | Train loss: 0.6001296817981703 | Valid loss: 0.5849213749170303 | Train scores: accuracy: 0.7615606936416185 | Valid scores: accuracy: 0.7144495412844036 | Time/epoch: 19.8926 seconds
+2023-12-10 16:43:21 - INFO - New best model: valid accuracy update from 0.6628440366972477 to 0.7144495412844036
+2023-12-10 16:43:21 - INFO - Saving best model: ./sst2_ckpt/run@231210_16:42:42/best_model_epoch2.pth ...
+2023-12-10 16:43:40 - INFO - [GPU0] | Epoch 3/10 | Train loss: 0.5372536731755129 | Valid loss: 0.5736100247928074 | Train scores: accuracy: 0.8138728323699422 | Valid scores: accuracy: 0.7282110091743119 | Time/epoch: 19.31406 seconds
+2023-12-10 16:43:40 - INFO - New best model: valid accuracy update from 0.7144495412844036 to 0.7282110091743119
+2023-12-10 16:43:40 - INFO - Saving best model: ./sst2_ckpt/run@231210_16:42:42/best_model_epoch3.pth ...
+2023-12-10 16:43:59 - INFO - [GPU0] | Epoch 4/10 | Train loss: 0.4971857097017051 | Valid loss: 0.5704488051789147 | Train scores: accuracy: 0.8320809248554913 | Valid scores: accuracy: 0.7293577981651376 | Time/epoch: 18.29428 seconds
+2023-12-10 16:43:59 - INFO - New best model: valid accuracy update from 0.7282110091743119 to 0.7293577981651376
+2023-12-10 16:43:59 - INFO - Saving best model: ./sst2_ckpt/run@231210_16:42:42/best_model_epoch4.pth ...
+2023-12-10 16:43:59 - INFO - Saving checkpoint: ./sst2_ckpt/run@231210_16:42:42/checkpoint_epoch4.pth ...
+2023-12-10 16:44:18 - INFO - [GPU0] | Epoch 5/10 | Train loss: 0.5088460817589738 | Valid loss: 0.5786607595426696 | Train scores: accuracy: 0.819364161849711 | Valid scores: accuracy: 0.716743119266055 | Time/epoch: 19.63907 seconds
+2023-12-10 16:44:38 - INFO - [GPU0] | Epoch 6/10 | Train loss: 0.4883294870501839 | Valid loss: 0.5736998000315258 | Train scores: accuracy: 0.8511560693641619 | Valid scores: accuracy: 0.7270642201834863 | Time/epoch: 19.68517 seconds
+2023-12-10 16:44:58 - INFO - [GPU0] | Epoch 7/10 | Train loss: 0.4580648419219777 | Valid loss: 0.5765066466161183 | Train scores: accuracy: 0.8729768786127168 | Valid scores: accuracy: 0.7259174311926605 | Time/epoch: 19.3478 seconds
+2023-12-10 16:45:18 - INFO - [GPU0] | Epoch 8/10 | Train loss: 0.4451347106063421 | Valid loss: 0.5650713560836655 | Train scores: accuracy: 0.8894508670520231 | Valid scores: accuracy: 0.7259174311926605 | Time/epoch: 20.88113 seconds
+2023-12-10 16:45:18 - INFO - Saving checkpoint: ./sst2_ckpt/run@231210_16:42:42/checkpoint_epoch8.pth ...
+2023-12-10 16:45:40 - INFO - [GPU0] | Epoch 9/10 | Train loss: 0.4242527932615324 | Valid loss: 0.5551174240452903 | Train scores: accuracy: 0.9017341040462428 | Valid scores: accuracy: 0.7488532110091743 | Time/epoch: 21.02294 seconds
+2023-12-10 16:45:40 - INFO - New best model: valid accuracy update from 0.7293577981651376 to 0.7488532110091743
+2023-12-10 16:45:40 - INFO - Saving best model: ./sst2_ckpt/run@231210_16:42:42/best_model_epoch9.pth ...
+2023-12-10 16:46:01 - INFO - [GPU0] | Epoch 10/10 | Train loss: 0.4105628948607203 | Valid loss: 0.5536428679312978 | Train scores: accuracy: 0.9134393063583816 | Valid scores: accuracy: 0.7534403669724771 | Time/epoch: 21.74936 seconds
+2023-12-10 16:46:01 - INFO - New best model: valid accuracy update from 0.7488532110091743 to 0.7534403669724771
+2023-12-10 16:46:01 - INFO - Saving best model: ./sst2_ckpt/run@231210_16:42:42/best_model_epoch10.pth ...
+2023-12-10 16:46:01 - INFO - ---------- End of training. Total time: 198.88231 seconds ----------
+2023-12-10 16:46:11 - INFO - Loading checkpoint: ./sst2_ckpt/run@231210_16:42:42/best_model_epoch10.pth ...
+2023-12-10 16:46:11 - INFO - Checkpoint loaded successfully.
+2023-12-10 16:46:12 - INFO - Scores on test dataset: accuracy: 0.7358594179022515

@@ -35,14 +35,6 @@ if __name__ == '__main__':
 
     torch.cuda.set_device(local_rank)
 
-    # load dataset from huggingface
-    cache_dir = "./.huggingface"
-    dataset_path = "mnist"
-    mnist_dataset = load_dataset(path=dataset_path, cache_dir=cache_dir)
-
-    train_data = mnist_dataset['train']
-    valid_data = mnist_dataset['test']
-
     # load config
     config_file = "./config.yaml"
     with open(config_file, 'r') as file:
@@ -52,6 +44,15 @@ if __name__ == '__main__':
     
     # set up seed for reproducibility
     setup_seed(config['seed'])
+
+    # load data from huggingface
+    cache_dir = "./.huggingface"
+    dataset_path = "mnist"
+    raw_dataset = load_dataset(path=dataset_path, cache_dir=cache_dir)
+
+    # split data
+    train_data = raw_dataset['train']
+    valid_data = raw_dataset['test']
 
     # preprocess
     image_transform, label_transform = preprocess_cv()
@@ -69,11 +70,12 @@ if __name__ == '__main__':
     )
 
     # get batch size for each process
-    batch_size_per_proc = config['loader_cfg']['batch_size'] // world_size
+    batch_size_all_proc = config['loader_cfg']['batch_size'] // config['train_cfg']['accum_step']
+    batch_size_per_proc = batch_size_all_proc // world_size
     config['loader_cfg'].update({'batch_size_per_proc': batch_size_per_proc})
 
     # the effective batch size
-    effective_batch_size = batch_size_per_proc * world_size
+    effective_batch_size = batch_size_per_proc * world_size * config['train_cfg']['accum_step']
     config['loader_cfg'].update({'effective_batch_size': effective_batch_size})
 
     num_workers = config['loader_cfg']['num_workers']
@@ -117,15 +119,6 @@ if __name__ == '__main__':
         T_mult=config['scheduler_cfg']['T_mult'],
     )
 
-    # wandb init, only for the process whose global rank is 0
-    if global_rank == 0 and config['wandb_cfg']['use_wandb'] is True:
-        wandb.init(
-            project=config['wandb_cfg']['project'],
-            notes=config['wandb_cfg']['notes'],
-            tags=config['wandb_cfg']['tags'],
-            config=config,
-        )
-
     # create trainer
     trainer = Trainer(
         local_rank=local_rank,
@@ -136,7 +129,7 @@ if __name__ == '__main__':
         train_loader=train_loader,
         valid_loader=valid_loader,
         scheduler=scheduler,
-        use_wandb=config['wandb_cfg']['use_wandb'],
+        use_wandb=config['use_wandb'],
     )
 
     # test methods
@@ -152,12 +145,9 @@ if __name__ == '__main__':
     trainer.train(
         **config['train_cfg'],
         config_to_log=config,
+        wandb_cfg=config['wandb_cfg'],
         test_methods=test_methods,
     )
-
-    # wandb finish
-    if global_rank == 0:
-        wandb.finish()
 
     # clean up DDP
     destroy_process_group()

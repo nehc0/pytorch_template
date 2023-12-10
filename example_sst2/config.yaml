@@ -1,11 +1,14 @@
 seed: 6
+use_wandb: True
 
 # config for wandb
 wandb_cfg:
-  use_wandb: True
-  project: "IMDb"
+  project: "SST2"
   notes: "training details on the process of global rank 0"
-  tags: ["IMDb dataset", "TransformerEncoder"]
+  tags: ["SST2", "TransformerEncoder"]
+  watch_model: True
+  # required if `watch_model` is True
+  watch_model_freq: 1
 
 # config for NLP preprocess
 preprocess_nlp_cfg:
@@ -19,7 +22,7 @@ preprocess_nlp_cfg:
 # config for loader
 loader_cfg:
   batch_size: 32
-  num_workers: 8
+  num_workers: 24
   pin_memory: True
 
 # config for model
@@ -28,23 +31,24 @@ model_cfg:
   embed_dim: 128
   nhead: 2
   dim_feedforward: 512
-  num_layers: 2
+  num_layers: 1
   num_classes: 2
   dropout: 0.1
 
 # config for optimizer
 optimizer_cfg:
-  lr: 0.0005
-  weight_decay: 0.001
+  lr: 0.001
+  weight_decay: 0.01
 
 # config for scheduler
 scheduler_cfg:
-  T_0: 5
+  T_0: 4
   T_mult: 2
 
 # config for train
 train_cfg:
-  max_epoch: 20
+  max_epoch: 10
+  accum_step: 1
   do_valid: True
   do_test: True
   save_log: True
@@ -58,12 +62,12 @@ train_cfg:
   test_start: 1
   test_step: 1
   # required if `save_*` is True
-  save_dir: "./imdb_ckpt"
+  save_dir: "./sst2_ckpt"
   # required if `save_best` is True
   measure_best: "accuracy"
   measure_mode: "max"
   # required if `save_checkpoint` is True
   checkpoint_latest: True
-  checkpoint_list: [10, 15]
+  checkpoint_list: [4, 8]
   # required if `resume_checkpoint` is True
   resume_path: null
