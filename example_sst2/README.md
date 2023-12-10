@@ -3,7 +3,7 @@
 This example shows how to customize the template,
 details at [`./report.pdf`](./report.pdf).
 
-## Running the Project
+## Running
 
 - resolve the requirements, see [`./requirements.txt`](./requirements.txt)
 - (optional) tweak config in [`./config.yaml`](./config.yaml) to suit your needs
