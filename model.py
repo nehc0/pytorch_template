@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 class SelfAttention(nn.Module):
     def __init__(self, input_dim):
-        super(SelfAttention, self).__init__()
+        super().__init__()
         
         self.input_dim = input_dim
         self.query = nn.Linear(input_dim, input_dim)
